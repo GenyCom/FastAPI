@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, , HTTPException, status
 from pydantic import BaseModel
 
 app = FastAPI()
@@ -18,7 +18,26 @@ tasks = [
 
 @app.get("/tasks")
 async def read_tasks():
-    return tasks
+    try:
+        # Simuler une vérification de disponibilité du service
+        if not tasks:  # Si la liste est vide (simulation d'erreur)
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Service temporarily unavailable"
+            )
+            
+        return tasks
+        
+    except HTTPException as http_exc:
+        # On relance les HTTPException telles quelles
+        raise http_exc
+        
+    except Exception as e:
+        logger.error(f"Unexpected error in read_tasks: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred while processing your request"
+        )
 
 @app.post("/tasks")
 async def create_task(task: Task):
